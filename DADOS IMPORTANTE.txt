@@ -1,0 +1,2 @@
+		
+sempre roda o servidor		npx http-server .

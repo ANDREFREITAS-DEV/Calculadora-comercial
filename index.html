@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Calculadora Comercial</title>
+  <meta name="theme-color" content="#ff7a00" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Favicon -->
+<link rel="icon" href="/ico.png" type="image/png">
+<link rel="shortcut icon" href="/ico.png" type="image/png">
+
+<meta property="og:title" content="Calculadora Margem e Markup">
+<meta property="og:description" content="Calculadora moderna, rápida e elegante para cálculo de margem e markup.">
+<meta property="og:image" content="/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- PWA capable (compat) -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- PWA capable (compat) -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- Favicon -->
+<link rel="icon" href="/ico.png" type="image/png">
+<link rel="shortcut icon" href="/ico.png" type="image/png">
+
+<!-- Apple Touch Icon (iOS) -->
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+</head>
+<body>
+
+<div id="app-loading">
+  <div class="loader-box">
+    <div class="loader-icon"></div>
+    <div class="loader-text">Calculadora Comercial</div>
+  </div>
+</div>
+
+  <main class="app" id="app">
+    <section class="calc" aria-label="Calculadora">
+      <div class="display" id="display">
+        <div class="display-icons" aria-label="Ações">
+          <button id="btn-commercial" class="icon-btn" aria-label="Modo Comercial" title="Modo Comercial">
+            <span aria-hidden="true">💼</span>
+          </button>
+          <button id="btn-history" class="icon-btn" aria-label="Histórico" title="Histórico">
+            <span aria-hidden="true">🕘</span>
+          </button>
+          <button id="btn-theme" class="icon-btn" aria-label="Alternar tema" title="Tema">
+            <span aria-hidden="true">⚙️</span>
+          </button>
+        </div>
+
+        <div id="mem-indicator" class="mem-indicator" hidden>M</div>
+
+        <div id="expression" class="expression"></div>
+        <div id="value" class="value">0</div>
+      </div>
+
+      <div class="keypad" id="keypad" aria-label="Teclado">
+        <button class="btn soft mem" data-action="mem" data-mem="mc">MC</button>
+        <button class="btn soft mem" data-action="mem" data-mem="mr">MR</button>
+        <button class="btn soft mem" data-action="mem" data-mem="mplus">M+</button>
+        <button class="btn soft mem" data-action="mem" data-mem="mminus">M-</button>
+        <button class="btn soft" data-action="clear">C</button>
+        <button class="btn soft" data-action="back">⌫</button>
+        <button class="btn soft" data-action="percent">%</button>
+        <button class="btn op" data-action="op" data-op="÷">÷</button>
+
+        <button class="btn" data-action="digit" data-digit="7">7</button>
+        <button class="btn" data-action="digit" data-digit="8">8</button>
+        <button class="btn" data-action="digit" data-digit="9">9</button>
+        <button class="btn op" data-action="op" data-op="×">×</button>
+
+        <button class="btn" data-action="digit" data-digit="4">4</button>
+        <button class="btn" data-action="digit" data-digit="5">5</button>
+        <button class="btn" data-action="digit" data-digit="6">6</button>
+        <button class="btn op" data-action="op" data-op="-">-</button>
+
+        <button class="btn" data-action="digit" data-digit="1">1</button>
+        <button class="btn" data-action="digit" data-digit="2">2</button>
+        <button class="btn" data-action="digit" data-digit="3">3</button>
+        <button class="btn op" data-action="op" data-op="+">+</button>
+
+        <button class="btn wide" data-action="digit" data-digit="0">0</button>
+        <button class="btn" data-action="dot">.</button>
+        <button class="btn eq" data-action="equals">=</button>
+      </div>
+    </section>
+
+    <div class="backdrop" id="backdrop" hidden></div>
+
+    <section class="panel" id="panel" aria-hidden="true">
+      <header class="panel-header">
+        <div class="panel-title" id="panel-title">Painel</div>
+        <button class="panel-close" id="panel-close" aria-label="Fechar painel" title="Fechar">✕</button>
+      </header>
+      <div class="panel-content" id="panel-content"></div>
+    </section>
+  </main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
