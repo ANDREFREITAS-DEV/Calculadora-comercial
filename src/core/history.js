@@ -12,7 +12,11 @@ function load() {
 }
 
 function save(items) {
-  localStorage.setItem(KEY, JSON.stringify(items.slice(0, LIMIT)));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(items.slice(0, LIMIT)));
+  } catch {
+    // localStorage cheio ou bloqueado (modo privado) — silencia sem corromper estado
+  }
 }
 
 export const historyService = {

@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-180.png" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css" />
 
   <!-- Favicon -->
 <link rel="icon" href="/ico.png" type="image/png">
@@ -61,10 +62,16 @@
           </button>
         </div>
 
-        <div id="mem-indicator" class="mem-indicator" hidden>M</div>
-
-        <div id="expression" class="expression"></div>
-        <div id="value" class="value">0</div>
+        <div class="display-top">
+          <div class="d-expr" id="expression"></div>
+          <div class="d-value" id="value">0</div>
+        </div>
+        <div class="display-divider"></div>
+        <div class="display-history">
+          <i class="ti ti-history" aria-hidden="true"></i>
+          <div class="hist-scroll" id="hist-scroll"></div>
+          <div class="mem-chip" id="mem-indicator" hidden></div>
+        </div>
       </div>
 
       <div class="keypad" id="keypad" aria-label="Teclado">
