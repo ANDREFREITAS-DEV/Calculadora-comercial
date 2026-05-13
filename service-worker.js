@@ -1,5 +1,5 @@
 /* Calculadora Comercial - Service Worker (safe cache) */
-const VERSION = "2026-03-02-1";
+const VERSION = "2026-05-13-1";
 const CACHE_NAME = `calc-comercial-${VERSION}`;
 const PRECACHE_URLS = [
   "/",
@@ -50,6 +50,23 @@ async function handleNavigate() {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
+
+  // Tabler Icons CDN — cacheia na primeira visita, serve offline depois
+  if (url.hostname === "cdn.jsdelivr.net" && url.pathname.includes("tabler-icons")) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      try {
+        const res = await fetch(req);
+        if (res && res.ok) cache.put(req, res.clone());
+        return res;
+      } catch {
+        return new Response("", { status: 504 });
+      }
+    })());
+    return;
+  }
 
   // Só cuidar do mesmo origin
   if (url.origin !== self.location.origin) return;
