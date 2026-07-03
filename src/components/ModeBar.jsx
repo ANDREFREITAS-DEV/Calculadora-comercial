@@ -6,7 +6,7 @@ const MODES = [
   { id: 'date', label: 'Datas' },
 ];
 
-export default function ModeBar({ mode, onChange }) {
+export default function ModeBar({ mode, onChange, onSettings }) {
   return (
     <nav className="modes" aria-label="Modos da calculadora">
       {MODES.map((m) => (
@@ -19,6 +19,9 @@ export default function ModeBar({ mode, onChange }) {
           {m.label}
         </button>
       ))}
+      <button className="theme-btn" onClick={onSettings} aria-label="Ajustes">
+        ⚙
+      </button>
     </nav>
   );
 }

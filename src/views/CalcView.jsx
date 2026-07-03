@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { evaluate, evaluateLive } from '../lib/engine.js';
 import { formatNumber, numberToExpr } from '../lib/format.js';
+import { vibrate } from '../lib/haptics.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import Tape from '../components/Tape.jsx';
 import HistorySheet from '../components/HistorySheet.jsx';
 
 const MAX_HISTORY = 200;
+const LONG_PRESS_MS = 600;
+const TOAST_MS = 1600;
 
 // Mapeia token interno → texto exibido
 const PRETTY = {
@@ -29,13 +32,27 @@ function toSource(tokens) {
 
 const OPERATORS = ['+', '-', '*', '/', '^'];
 
+// Tokens após os quais um operador pós-fixo (% ou x²) é válido:
+// dígito, fecha-parêntese, %, ou constantes.
+function acceptsPostfix(t) {
+  return t !== null && (/^[0-9]$/.test(t) || t === ')' || t === '%' || t === 'pi' || t === 'e');
+}
+
 export default function CalcView() {
   const [tokens, setTokens] = useState([]);
   const [committed, setCommitted] = useState(null); // último "=" (número)
   const [error, setError] = useState(null);
   const [history, setHistory] = useLocalStorage('calcplus.history', []);
   const [memory, setMemory] = useLocalStorage('calcplus.memory', null);
+  const [sciOpen, setSciOpen] = useLocalStorage('calcplus.scidrawer', false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Long press: ⌫ (limpar tudo) e resultado (copiar)
+  const bsTimer = useRef(null);
+  const bsLongFired = useRef(false);
+  const copyTimer = useRef(null);
+  const toastTimer = useRef(null);
 
   const source = toSource(tokens);
   const live = useMemo(() => evaluateLive(source), [source]);
@@ -56,6 +73,12 @@ export default function CalcView() {
       if (!/^[0-9]$/.test(t)) return false;
     }
     return false;
+  }
+
+  function showToast(msg) {
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
   }
 
   const handlers = {
@@ -102,9 +125,24 @@ export default function CalcView() {
       push(op);
     },
     percent() {
-      if (lastToken && (/^[0-9]$/.test(lastToken) || lastToken === ')' || lastToken === '%')) {
-        push('%');
+      vibrate();
+      if (committed !== null) {
+        setError(null);
+        setCommitted(null);
+        setTokens([numberToExpr(committed), '%']);
+        return;
       }
+      if (acceptsPostfix(lastToken)) push('%');
+    },
+    square() {
+      // x²: eleva ao quadrado o operando atual (append ^2)
+      if (committed !== null) {
+        setError(null);
+        setCommitted(null);
+        setTokens([numberToExpr(committed), '^', '2']);
+        return;
+      }
+      if (acceptsPostfix(lastToken)) push('^', '2');
     },
     paren(p) {
       if (committed !== null && p === '(') {
@@ -141,6 +179,7 @@ export default function CalcView() {
       setTokens((prev) => prev.slice(0, -1));
     },
     equals() {
+      vibrate();
       if (tokens.length === 0) return;
       let src = source;
       // fecha parênteses pendentes
@@ -185,6 +224,54 @@ export default function CalcView() {
     },
   };
 
+  // ----- Long press no ⌫: toque curto apaga 1, segurar 600 ms limpa tudo -----
+  function backspaceDown() {
+    bsLongFired.current = false;
+    bsTimer.current = setTimeout(() => {
+      bsLongFired.current = true;
+      vibrate(30); // confirmação tátil do limpar tudo
+      handlers.clear();
+    }, LONG_PRESS_MS);
+  }
+
+  function backspaceUp() {
+    clearTimeout(bsTimer.current);
+    if (!bsLongFired.current) {
+      vibrate();
+      handlers.backspace();
+    }
+  }
+
+  function backspaceCancel() {
+    // dedo saiu do botão / gesto cancelado: não apaga nada
+    clearTimeout(bsTimer.current);
+    bsLongFired.current = true;
+  }
+
+  // ----- Long press no resultado: copiar valor formatado -----
+  const copyableValue =
+    error === null && committed !== null
+      ? formatNumber(committed)
+      : error === null && live !== null
+        ? formatNumber(live)
+        : null;
+
+  function copyDown() {
+    if (copyableValue === null) return;
+    copyTimer.current = setTimeout(async () => {
+      try {
+        await navigator.clipboard.writeText(copyableValue);
+        showToast('✓ Copiado');
+      } catch {
+        showToast('Não foi possível copiar');
+      }
+    }, LONG_PRESS_MS);
+  }
+
+  function copyCancel() {
+    clearTimeout(copyTimer.current);
+  }
+
   function reuseFromHistory(entry) {
     setSheetOpen(false);
     setCommitted(null);
@@ -213,37 +300,76 @@ export default function CalcView() {
 
       <div className="display" aria-live="polite">
         <div className="expr">{prettyPrint(tokens) || '\u00A0'}</div>
-        <div className={`result ${sizeClass}${error ? ' error' : ''}`}>{displayValue}</div>
+        <div
+          className={`result ${sizeClass}${error ? ' error' : ''}`}
+          onPointerDown={copyDown}
+          onPointerUp={copyCancel}
+          onPointerLeave={copyCancel}
+          onPointerCancel={copyCancel}
+          onContextMenu={(e) => e.preventDefault()}
+          title="Segure para copiar"
+        >
+          {displayValue}
+        </div>
         <div className="display-badges">
           <span className="badge deg">DEG</span>
           {memory !== null && <span className="badge mem">M {formatNumber(memory)}</span>}
         </div>
       </div>
 
-      <div className="sci">
-        <button onClick={() => handlers.fn('sin')}>sin</button>
-        <button onClick={() => handlers.fn('cos')}>cos</button>
-        <button onClick={() => handlers.fn('tan')}>tan</button>
-        <button onClick={() => handlers.fn('ln')}>ln</button>
-        <button onClick={() => handlers.fn('log')}>log</button>
+      <button
+        className={`sci-handle${sciOpen ? ' open' : ''}`}
+        onClick={() => setSciOpen((v) => !v)}
+        aria-expanded={sciOpen}
+        aria-controls="sci-drawer"
+      >
+        <span className="arrow">⌃</span>científica
+      </button>
 
-        <button onClick={() => handlers.paren('(')}>(</button>
-        <button onClick={() => handlers.paren(')')}>)</button>
-        <button onClick={() => handlers.operator('^')}>xʸ</button>
-        <button onClick={() => handlers.fn('sqrt')}>√</button>
-        <button onClick={() => handlers.constant('pi')}>π</button>
+      <div id="sci-drawer" className={`sci-drawer${sciOpen ? ' open' : ''}`}>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('sin')}>sin</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('cos')}>cos</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('tan')}>tan</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('ln')}>ln</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('log')}>log</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.fn('sqrt')}>√</button>
 
-        <button className="mem-key" onClick={handlers.memClear}>MC</button>
-        <button className="mem-key" onClick={handlers.memRecall}>MR</button>
-        <button className="mem-key" onClick={() => handlers.memAdd(1)}>M+</button>
-        <button className="mem-key" onClick={() => handlers.memAdd(-1)}>M−</button>
-        <button onClick={() => handlers.constant('e')}>e</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.paren('(')}>(</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.paren(')')}>)</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.operator('^')}>xʸ</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={handlers.square}>x²</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.constant('pi')}>π</button>
+        <button tabIndex={sciOpen ? 0 : -1} onClick={() => handlers.constant('e')}>e</button>
+      </div>
+
+      <div className="mem-row">
+        <button onClick={handlers.memClear}>MC</button>
+        <button onClick={handlers.memRecall}>MR</button>
+        <button onClick={() => handlers.memAdd(1)}>M+</button>
+        <button onClick={() => handlers.memAdd(-1)}>M−</button>
       </div>
 
       <div className="keys">
         <button className="key fn" onClick={handlers.clear}>C</button>
         <button className="key fn" onClick={handlers.percent}>%</button>
-        <button className="key fn" onClick={handlers.backspace} aria-label="Apagar">⌫</button>
+        <button
+          className="key fn"
+          onPointerDown={backspaceDown}
+          onPointerUp={backspaceUp}
+          onPointerLeave={backspaceCancel}
+          onPointerCancel={backspaceCancel}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              vibrate();
+              handlers.backspace();
+            }
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-label="Apagar (segure para limpar tudo)"
+        >
+          ⌫
+        </button>
         <button className="key op" onClick={() => handlers.operator('/')}>÷</button>
 
         <button className="key" onClick={() => handlers.digit('7')}>7</button>
@@ -265,6 +391,12 @@ export default function CalcView() {
         <button className="key" onClick={handlers.comma}>,</button>
         <button className="key eq" onClick={handlers.equals}>=</button>
       </div>
+
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
+      )}
 
       {sheetOpen && (
         <HistorySheet

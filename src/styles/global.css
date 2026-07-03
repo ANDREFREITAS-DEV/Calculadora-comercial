@@ -1,11 +1,14 @@
+/* ===== Tema escuro (grafite) — padrão ===== */
 :root {
   --bg: #0e1116;
   --surface: #161c24;
   --surface-2: #1e2530;
   --key: #1b222c;
   --key-fn: #232c39;
+  --key-border: transparent;
   --amber: #ffb454;
   --amber-deep: #e89a35;
+  --eq-ink: #1a1206;
   --ink: #e9edf3;
   --ink-dim: #8a94a3;
   --ink-faint: #5a6474;
@@ -13,6 +16,27 @@
   --green: #7ed9a7;
   --red: #f28b82;
   --radius: 18px;
+  --shadow: rgba(0, 0, 0, 0.55);
+}
+
+/* ===== Tema claro (papel de bobina) ===== */
+[data-theme='light'] {
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --surface-2: #e9e4d8;
+  --key: #ffffff;
+  --key-fn: #e9e4d8;
+  --key-border: #e2dcce;
+  --amber: #d98200;
+  --amber-deep: #b96e00;
+  --eq-ink: #ffffff;
+  --ink: #1c222c;
+  --ink-dim: #5d6675;
+  --ink-faint: #9099a7;
+  --tape-line: #d8d2c4;
+  --green: #1f9d5b;
+  --red: #c5473d;
+  --shadow: rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -33,6 +57,7 @@ body {
   color: var(--ink);
   font-family: 'Inter', system-ui, sans-serif;
   overscroll-behavior: none;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 button {
@@ -59,6 +84,7 @@ input {
 /* ===== Barra de modos ===== */
 .modes {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: calc(12px + env(safe-area-inset-top)) 14px 8px;
 }
@@ -76,6 +102,17 @@ input {
 .mode.active {
   background: var(--surface-2);
   color: var(--amber);
+}
+
+.theme-btn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1;
 }
 
 .mode:focus-visible,
@@ -101,7 +138,7 @@ input:focus-visible {
   text-align: left;
   width: calc(100% - 28px);
   border-radius: 14px 14px 0 0;
-  background: linear-gradient(180deg, rgba(22, 28, 36, 0) 0%, var(--surface) 40%);
+  background: linear-gradient(180deg, transparent 0%, var(--surface) 40%);
 }
 
 .tape::after {
@@ -163,6 +200,7 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  flex: 1;
 }
 
 .expr {
@@ -181,6 +219,9 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
   font-size: 56px;
   word-break: break-all;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 
 .result.size-m {
@@ -193,6 +234,7 @@ input:focus-visible {
 
 .result.error {
   color: var(--red);
+  font-size: 30px;
 }
 
 .display-badges {
@@ -220,15 +262,63 @@ input:focus-visible {
   border: 1px solid var(--tape-line);
 }
 
-/* Gaveta científica */
-.sci {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 7px;
-  padding: 0 14px 8px;
+/* Alça da gaveta científica */
+.sci-handle {
+  margin: 0 14px;
+  padding: 7px 0 5px;
+  text-align: center;
+  width: calc(100% - 28px);
+  position: relative;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.18s;
 }
 
-.sci button {
+.sci-handle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--tape-line) 0 6px, transparent 6px 12px);
+}
+
+.sci-handle .arrow {
+  display: inline-block;
+  transition: transform 0.25s;
+  margin-right: 6px;
+}
+
+.sci-handle.open .arrow {
+  transform: rotate(180deg);
+}
+
+.sci-handle.open {
+  color: var(--amber);
+}
+
+/* Gaveta científica recolhível (2 fileiras de 6) */
+.sci-drawer {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+  padding: 0 14px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+}
+
+.sci-drawer.open {
+  max-height: 120px;
+  opacity: 1;
+  padding: 2px 14px 8px;
+}
+
+.sci-drawer button {
   border: 1px solid var(--tape-line);
   color: var(--ink-dim);
   font-family: 'IBM Plex Mono', monospace;
@@ -238,13 +328,51 @@ input:focus-visible {
   transition: background 0.12s;
 }
 
-.sci button:active {
+.sci-drawer button:active {
   background: var(--surface-2);
 }
 
-.sci button.mem-key {
+/* Fileira de memória (4 colunas, alinhada ao teclado) */
+.mem-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  padding: 0 14px 8px;
+}
+
+.mem-row button {
+  border: 1px solid var(--tape-line);
   color: var(--green);
   opacity: 0.85;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  padding: 9px 0;
+  border-radius: 10px;
+  transition: background 0.12s;
+}
+
+.mem-row button:active {
+  background: var(--surface-2);
+}
+
+/* Botão instalar app (PWA) */
+.install {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 9%, transparent);
+  color: var(--amber);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 999px;
+  margin: 2px 0 4px;
+  transition: background 0.15s;
+}
+
+.install:active {
+  background: color-mix(in srgb, var(--amber) 20%, transparent);
 }
 
 /* Teclado */
@@ -258,6 +386,7 @@ input:focus-visible {
 
 .key {
   background: var(--key);
+  border: 1px solid var(--key-border);
   color: var(--ink);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 22px;
@@ -265,11 +394,18 @@ input:focus-visible {
   height: 60px;
   border-radius: var(--radius);
   transition: transform 0.08s, filter 0.12s;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .key:active {
   transform: scale(0.96);
-  filter: brightness(1.15);
+  filter: brightness(1.08);
+}
+
+[data-theme='light'] .key:active {
+  filter: brightness(0.95);
 }
 
 .key.fn {
@@ -286,14 +422,45 @@ input:focus-visible {
 
 .key.eq {
   background: linear-gradient(160deg, var(--amber), var(--amber-deep));
-  color: #1a1206;
+  color: var(--eq-ink);
   font-weight: 600;
+  border: none;
 }
 
 .key.zero {
   grid-column: span 2;
   text-align: left;
   padding-left: 28px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26%;
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--tape-line);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px var(--shadow);
+  z-index: 60;
+  animation: toast-in 0.18s ease-out;
+  pointer-events: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* ===== Painéis dos modos utilitários ===== */
@@ -322,6 +489,7 @@ input:focus-visible {
 
 .card {
   background: var(--surface);
+  border: 1px solid var(--key-border);
   border-radius: 16px;
   padding: 16px;
 }
@@ -353,6 +521,10 @@ input:focus-visible {
 .field-input[type='date'] {
   font-size: 20px;
   color-scheme: dark;
+}
+
+[data-theme='light'] .field-input[type='date'] {
+  color-scheme: light;
 }
 
 .unit-select {
@@ -456,7 +628,7 @@ input:focus-visible {
   gap: 10px;
 }
 
-/* ===== Folha de histórico ===== */
+/* ===== Folhas (histórico e ajustes) ===== */
 .sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -478,6 +650,7 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   animation: sheet-up 0.22s ease-out;
+  box-shadow: 0 -8px 40px var(--shadow);
 }
 
 @keyframes sheet-up {
@@ -488,16 +661,6 @@ input:focus-visible {
   to {
     transform: translate(-50%, 0);
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sheet {
-    animation: none;
-  }
-  .key,
-  .swap {
-    transition: none;
   }
 }
 
@@ -600,4 +763,67 @@ input:focus-visible {
   color: var(--ink-faint);
   font-size: 13px;
   padding: 30px 0 40px;
+}
+
+/* Folha de ajustes */
+.settings-sheet {
+  max-height: none;
+}
+
+.settings-body {
+  padding: 4px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seg-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.segmented {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.segmented button {
+  flex: 1;
+  color: var(--ink-dim);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 0;
+  border-radius: 11px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.segmented button.on {
+  background: var(--bg);
+  color: var(--amber);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.settings-hint {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+/* Acessibilidade: movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .toast {
+    animation: none;
+  }
+  .key,
+  .swap,
+  .sci-drawer,
+  .sci-handle .arrow,
+  body {
+    transition: none;
+  }
 }

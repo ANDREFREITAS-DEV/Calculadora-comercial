@@ -64,9 +64,11 @@ function tokenize(src) {
 
 // ---------- Parser (precedência crescente) ----------
 // expr    := term (('+' | '-') term)*
-// term    := factor (('*' | '/') factor)*
-// factor  := unary ('^' factor)?          (potência: assoc. à direita)
-// unary   := '-' unary | postfix
+// term    := unary (('*' | '/') unary)*
+// unary   := '-' unary | power
+// power   := postfix ('^' unary)?         (potência: assoc. à direita;
+//                                          menos unário ABAIXO de ^,
+//                                          logo -3^2 = -(3^2) = -9)
 // postfix := primary ('%')*
 // primary := num | fn '(' expr ')' | '(' expr ')'
 
@@ -111,30 +113,31 @@ function parse(tokens) {
     return node;
   }
 
+  function parsePower() {
+    const base = parsePostfix();
+    if (peek() && peek().t === '^') {
+      next();
+      // expoente via parseUnary: permite 2^-3 e mantém assoc. à direita
+      const exp = parseUnary();
+      return { type: 'bin', op: '^', l: base, r: exp };
+    }
+    return base;
+  }
+
   function parseUnary() {
     if (peek() && (peek().t === '-' || peek().t === '+')) {
       const op = next().t;
       const v = parseUnary();
       return op === '-' ? { type: 'neg', v } : v;
     }
-    return parsePostfix();
-  }
-
-  function parseFactor() {
-    const base = parseUnary();
-    if (peek() && peek().t === '^') {
-      next();
-      const exp = parseFactor(); // associatividade à direita
-      return { type: 'bin', op: '^', l: base, r: exp };
-    }
-    return base;
+    return parsePower();
   }
 
   function parseTerm() {
-    let node = parseFactor();
+    let node = parseUnary();
     while (peek() && (peek().t === '*' || peek().t === '/')) {
       const op = next().t;
-      node = { type: 'bin', op, l: node, r: parseFactor() };
+      node = { type: 'bin', op, l: node, r: parseUnary() };
     }
     return node;
   }
@@ -154,6 +157,12 @@ function parse(tokens) {
 }
 
 // ---------- Avaliador ----------
+/** Lança erro amigável quando uma operação estoura o limite numérico. */
+function overflowCheck(v) {
+  if (v === Infinity || v === -Infinity) throw new Error('Número muito grande');
+  return v;
+}
+
 function evalNode(node) {
   switch (node.type) {
     case 'num':
@@ -170,13 +179,17 @@ function evalNode(node) {
           return Math.sin(x * DEG);
         case 'cos':
           return Math.cos(x * DEG);
-        case 'tan':
+        case 'tan': {
+          // tangente é indefinida em 90° + k·180° (90, 270, −90, 450…)
+          const norm = ((x % 180) + 180) % 180;
+          if (Math.abs(norm - 90) < 1e-9) throw new Error('tan indefinida');
           return Math.tan(x * DEG);
+        }
         case 'ln':
-          if (x <= 0) throw new Error('ln: domínio inválido');
+          if (x <= 0) throw new Error('Logaritmo inválido');
           return Math.log(x);
         case 'log':
-          if (x <= 0) throw new Error('log: domínio inválido');
+          if (x <= 0) throw new Error('Logaritmo inválido');
           return Math.log10(x);
         case 'sqrt':
           if (x < 0) throw new Error('√ de número negativo');
@@ -201,16 +214,16 @@ function evalNode(node) {
       }
       switch (node.op) {
         case '+':
-          return l + r;
+          return overflowCheck(l + r);
         case '-':
-          return l - r;
+          return overflowCheck(l - r);
         case '*':
-          return l * r;
+          return overflowCheck(l * r);
         case '/':
           if (r === 0) throw new Error('Divisão por zero');
-          return l / r;
+          return overflowCheck(l / r);
         case '^':
-          return Math.pow(l, r);
+          return overflowCheck(Math.pow(l, r));
         default:
           throw new Error('Operador desconhecido');
       }
@@ -228,6 +241,9 @@ export function evaluate(src) {
   const tokens = tokenize(src);
   if (tokens.length === 0) throw new Error('Vazio');
   const result = evalNode(parse(tokens));
+  if (result === Infinity || result === -Infinity) {
+    throw new Error('Número muito grande');
+  }
   if (!Number.isFinite(result)) throw new Error('Resultado indefinido');
   // Corrige ruído de ponto flutuante (ex.: 0.1+0.2)
   return parseFloat(result.toPrecision(13));

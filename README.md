@@ -4,7 +4,8 @@ Calculadora moderna inspirada no Calculator Plus, construída com React + Vite c
 
 ## Funcionalidades
 
-- **Calculadora básica + científica** — expressões multi-etapa com parênteses, sin/cos/tan (graus), ln, log, √, potência, π e e
+- **Calculadora básica + científica** — expressões multi-etapa com parênteses, sin/cos/tan (graus), ln, log, √, potência (xʸ), quadrado (x²), π e e
+- **Gaveta científica recolhível** — alça "⌃ científica" acima do teclado; fechada por padrão para otimizar espaço, estado persistente
 - **Porcentagem contextual** — `200 + 10%` = 220 (convenção de calculadoras comerciais)
 - **Memória** — MC, MR, M+, M− persistente
 - **Histórico com notas** — fita de bobina acima do display; toque para abrir o histórico completo, anotar cálculos e reutilizar resultados (persistente via localStorage, até 200 entradas)
@@ -12,7 +13,10 @@ Calculadora moderna inspirada no Calculator Plus, construída com React + Vite c
 - **Conversor de unidades** — comprimento, peso, temperatura, volume e área
 - **Conversor de moedas** — cotações em tempo real via AwesomeAPI (USD, EUR, GBP, ARS, BTC ↔ BRL) com cache offline de 10 minutos
 - **Calculadora de datas** — dias entre datas, somar/subtrair dias e idade
-- **PWA** — instalável, funciona offline (app shell pré-cacheado + cotações em cache)
+- **Tema Claro / Escuro / Automático** — folha de ajustes (ícone ⚙); escuro grafite, claro em tom de papel; automático segue o sistema em tempo real
+- **Mensagens de erro amigáveis** — "Divisão por zero", "Número muito grande" (overflow), "tan indefinida" (90° + k·180°), "Logaritmo inválido", "√ de número negativo" — nenhum Infinity/NaN silencioso
+- **UX tátil** — vibração curta em =, ⌫ e % (Android); segurar ⌫ por 600 ms limpa tudo; segurar o resultado copia o valor com toast "✓ Copiado"
+- **PWA** — instalável com botão "Instalar app" (aparece só quando instalável, some após instalar; Chrome/Android), funciona offline (app shell pré-cacheado + cotações em cache)
 
 ## Stack
 
@@ -39,7 +43,7 @@ npm run preview   # testar o build (inclui service worker)
 ```bash
 git init
 git add .
-git commit -m "feat: Calc+ v1.0"
+git commit -m "feat: Calc+ v1.2"
 git branch -M main
 git remote add origin https://github.com/SEU_USUARIO/calc-plus.git
 git push -u origin main
