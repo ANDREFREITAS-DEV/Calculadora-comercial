@@ -34,3 +34,34 @@ export function parseLocaleNumber(str) {
 export function numberToExpr(n) {
   return String(n);
 }
+
+// ---- Formatação de expressões (fita, display e histórico) ----
+
+const PRETTY_TOKENS = {
+  '*': ' × ',
+  '/': ' ÷ ',
+  '+': ' + ',
+  '-': ' − ',
+  '^': '^',
+  'sqrt(': '√(',
+  pi: 'π',
+  '.': ',',
+};
+
+// Token numérico completo (ex.: "24.32", "-3", "1.5e-7" vindos de numberToExpr)
+const NUMBER_TOKEN = /^-?[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?$/i;
+
+/**
+ * Converte a lista de tokens internos em texto de exibição pt-BR
+ * (× ÷ − e vírgula decimal, inclusive em tokens numéricos inteiros
+ * como resultados reaproveitados após "=").
+ */
+export function prettyPrint(tokens) {
+  return tokens
+    .map((t) => {
+      if (PRETTY_TOKENS[t] !== undefined) return PRETTY_TOKENS[t];
+      if (NUMBER_TOKEN.test(t)) return t.replace('.', ',').replace(/^-/, '−');
+      return t;
+    })
+    .join('');
+}

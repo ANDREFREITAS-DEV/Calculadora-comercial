@@ -83,6 +83,7 @@ input {
 
 /* ===== Barra de modos ===== */
 .modes {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -130,7 +131,7 @@ input:focus-visible {
   min-height: 0;
 }
 
-/* Fita de histórico */
+/* Fita de histórico — pode encolher em telas baixas, preservando o rótulo */
 .tape {
   margin: 2px 14px 0;
   padding: 10px 18px 8px;
@@ -139,6 +140,9 @@ input:focus-visible {
   width: calc(100% - 28px);
   border-radius: 14px 14px 0 0;
   background: linear-gradient(180deg, transparent 0%, var(--surface) 40%);
+  flex-shrink: 1;
+  min-height: 34px;
+  overflow: hidden;
 }
 
 .tape::after {
@@ -196,11 +200,11 @@ input:focus-visible {
 .display {
   padding: 8px 24px 12px;
   text-align: right;
-  min-height: 118px;
+  min-height: 84px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  flex: 1;
+  flex: 1 1 auto;
 }
 
 .expr {
@@ -264,6 +268,7 @@ input:focus-visible {
 
 /* Alça da gaveta científica */
 .sci-handle {
+  flex-shrink: 0;
   margin: 0 14px;
   padding: 7px 0 5px;
   text-align: center;
@@ -302,6 +307,7 @@ input:focus-visible {
 
 /* Gaveta científica recolhível (2 fileiras de 6) */
 .sci-drawer {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 7px;
@@ -334,6 +340,7 @@ input:focus-visible {
 
 /* Fileira de memória (4 colunas, alinhada ao teclado) */
 .mem-row {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 9px;
@@ -357,6 +364,7 @@ input:focus-visible {
 
 /* Botão instalar app (PWA) */
 .install {
+  flex-shrink: 0;
   align-self: center;
   display: flex;
   align-items: center;
@@ -377,6 +385,7 @@ input:focus-visible {
 
 /* Teclado */
 .keys {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 9px;

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { evaluate, evaluateLive } from '../lib/engine.js';
-import { formatNumber, numberToExpr } from '../lib/format.js';
+import { formatNumber, numberToExpr, prettyPrint } from '../lib/format.js';
 import { vibrate } from '../lib/haptics.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import Tape from '../components/Tape.jsx';
@@ -9,22 +9,6 @@ import HistorySheet from '../components/HistorySheet.jsx';
 const MAX_HISTORY = 200;
 const LONG_PRESS_MS = 600;
 const TOAST_MS = 1600;
-
-// Mapeia token interno → texto exibido
-const PRETTY = {
-  '*': ' × ',
-  '/': ' ÷ ',
-  '+': ' + ',
-  '-': ' − ',
-  '^': '^',
-  'sqrt(': '√(',
-  pi: 'π',
-  '.': ',',
-};
-
-function prettyPrint(tokens) {
-  return tokens.map((t) => PRETTY[t] ?? t).join('');
-}
 
 function toSource(tokens) {
   return tokens.join('');
